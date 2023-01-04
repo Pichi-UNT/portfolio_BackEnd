@@ -1,10 +1,13 @@
-package argentinaprograma.cvdigital.models;
+package argentinaprograma.cvdigital.usuario.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -41,7 +44,10 @@ public class Usuario {
     private String rol;
     @Column(name = "EstadoUsuario")
     private String estado;
-
+    @Column(name = "CodigoConfirmacion")
+    private String codigoConfirmacion;
+    @Column(columnDefinition = "DATETIME", name = "FechaGeneracionCodigo")
+    private LocalDateTime fechaGeneracionCodigo;
 
 
 }

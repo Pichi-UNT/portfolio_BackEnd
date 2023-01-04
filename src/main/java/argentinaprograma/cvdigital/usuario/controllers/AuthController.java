@@ -1,7 +1,8 @@
-package argentinaprograma.cvdigital.controllers;
+package argentinaprograma.cvdigital.usuario.controllers;
 
-import argentinaprograma.cvdigital.models.Usuario;
-import argentinaprograma.cvdigital.services.UsuarioServices;
+import argentinaprograma.cvdigital.usuario.DTO.AuthCredentials;
+import argentinaprograma.cvdigital.usuario.models.Usuario;
+import argentinaprograma.cvdigital.usuario.services.interfaces.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -13,34 +14,28 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthController {
 
-    UsuarioServices usuarioServices;
+    AuthService authService;
 
     @Autowired
-    public AuthController(UsuarioServices usuarioServices) {
-        this.usuarioServices = usuarioServices;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
 
     @PostMapping("/signin")
     public ResponseEntity<Void> registrar(@RequestBody Usuario usuario) {
-        Usuario usuarioCreado = usuarioServices.registrarUsuario(usuario);
+        authService.registrarUsuario(usuario);
         return ResponseEntity.ok().build();
     }
 
 
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@RequestBody Usuario usuario) {
-        String token=usuarioServices.iniciarSesion(usuario);
+    public ResponseEntity<Void> login(@RequestBody AuthCredentials authCredentials) {
+        String token= authService.iniciarSesion(authCredentials);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Bearer " + token);
         return ResponseEntity.ok().headers(headers).build();
     }
-
-//    @PutMapping("/pass-reset")
-//    public ResponseEntity<Void> recuperarContraseña(@RequestBody Usuario usuario, @RequestBody String url) {
-//        Usuario usuarioCreado = usuarioServices.registrarUsuario(usuario, url);
-//
-//    }
 
 
 

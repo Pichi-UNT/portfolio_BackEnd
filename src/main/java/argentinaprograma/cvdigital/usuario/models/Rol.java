@@ -1,4 +1,4 @@
-package argentinaprograma.cvdigital.models;
+package argentinaprograma.cvdigital.usuario.models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;

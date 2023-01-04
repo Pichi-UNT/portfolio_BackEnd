@@ -1,7 +1,7 @@
 package argentinaprograma.cvdigital.security.jwt;
 
-import argentinaprograma.cvdigital.models.Usuario;
-import argentinaprograma.cvdigital.repositories.UsuarioRepository;
+import argentinaprograma.cvdigital.usuario.models.Usuario;
+import argentinaprograma.cvdigital.usuario.repositories.UsuarioRepository;
 import argentinaprograma.cvdigital.exceptions.TokenException;
 import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Autowired;

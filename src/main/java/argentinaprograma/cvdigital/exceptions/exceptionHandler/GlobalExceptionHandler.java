@@ -1,4 +1,4 @@
-package argentinaprograma.cvdigital.controllers.exceptionHandler;
+package argentinaprograma.cvdigital.exceptions.exceptionHandler;
 
 import argentinaprograma.cvdigital.exceptions.*;
 import org.springframework.http.HttpStatus;
