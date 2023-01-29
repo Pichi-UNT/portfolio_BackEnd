@@ -9,6 +9,7 @@ import argentinaprograma.cvdigital.security.handlers.MyAuthenticationEntryPoint;
 import argentinaprograma.cvdigital.security.handlers.MyDeniedHandler;
 import argentinaprograma.cvdigital.security.jwt.JWTAuthenticationProvider;
 import argentinaprograma.cvdigital.security.jwt.JwtConfig;
+import org.hibernate.annotations.ConverterRegistration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,9 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -80,7 +79,6 @@ public class SecurityConfig {
                 .authenticationProvider(jwtAuthenticationProvider)
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-//                .authorizeHttpRequests().requestMatchers("/auth/**").permitAll().and()
                 .build();
     }
 

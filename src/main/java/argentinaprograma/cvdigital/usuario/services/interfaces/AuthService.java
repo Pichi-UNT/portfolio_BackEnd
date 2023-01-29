@@ -1,19 +1,19 @@
 package argentinaprograma.cvdigital.usuario.services.interfaces;
 
-import argentinaprograma.cvdigital.usuario.DTO.AuthCredentials;
-import argentinaprograma.cvdigital.usuario.models.Usuario;
+import argentinaprograma.cvdigital.usuario.DTO.UsuarioAuthCredentialsDTO;
+import argentinaprograma.cvdigital.usuario.DTO.UsuarioFullDTO;
 
 public interface AuthService {
 
-    void registrarUsuario(Usuario usuario);
+    void registrarUsuario(UsuarioFullDTO usuario);
 
-    void confirmarRegistro(AuthCredentials authCredentials);
+    void confirmarRegistro(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO);
 
-    String iniciarSesion(AuthCredentials authCredentials);
+    String iniciarSesion(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO);
 
-    void solicitarRestablecimientoDeContraseña(AuthCredentials authCredentials);
+    void solicitarRestablecimientoDeContraseña(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO);
 
-    void RestablecimientoDeContraseña(AuthCredentials authCredentials);
+    void RestablecimientoDeContraseña(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO);
 
 
 }

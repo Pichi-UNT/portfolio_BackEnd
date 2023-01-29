@@ -1,6 +1,7 @@
 package argentinaprograma.cvdigital.usuario.controllers;
 
 import argentinaprograma.cvdigital.exceptions.NotFoundException;
+import argentinaprograma.cvdigital.usuario.models.Rol;
 import argentinaprograma.cvdigital.usuario.models.Usuario;
 import argentinaprograma.cvdigital.usuario.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +20,16 @@ public class PruebaController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-//    @PostAuthorize("permitAll()")
+    @PostAuthorize("permitAll()")
 //    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public Usuario obtenerUsuario(@PathVariable("id") Integer id) {
-        return this.usuarioRepository.findById(id).orElseThrow(()-> new NotFoundException("Usuario no encontrado"));
+        System.out.println(Rol.USER.getValor());
+        System.out.println(Rol.USER.name());
+        return Usuario.builder().rol(Rol.USER).build();
     }
+//    @GetMapping("/2")
+//    public String obtenerUsuario() {
+//        return Rol.ADMIN.getValor();
+//    }
 }

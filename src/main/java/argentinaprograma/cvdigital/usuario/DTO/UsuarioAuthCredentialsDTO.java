@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AuthCredentials {
+public class UsuarioAuthCredentialsDTO extends UsuarioDTO {
     private String nick;
     private String pass;
     private String codigoConfirmacion;

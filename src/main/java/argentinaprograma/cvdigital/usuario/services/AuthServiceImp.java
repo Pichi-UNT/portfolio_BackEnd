@@ -1,12 +1,17 @@
 package argentinaprograma.cvdigital.usuario.services;
 
 import argentinaprograma.cvdigital.exceptions.BadRequestException;
-import argentinaprograma.cvdigital.usuario.DTO.AuthCredentials;
+import argentinaprograma.cvdigital.exceptions.NotFoundException;
+import argentinaprograma.cvdigital.usuario.DTO.UsuarioAuthCredentialsDTO;
+import argentinaprograma.cvdigital.usuario.DTO.UsuarioFullDTO;
+import argentinaprograma.cvdigital.usuario.models.Estado;
+import argentinaprograma.cvdigital.usuario.models.Rol;
 import argentinaprograma.cvdigital.usuario.models.Usuario;
+import argentinaprograma.cvdigital.usuario.repositories.UsuarioRepository;
 import argentinaprograma.cvdigital.usuario.services.interfaces.AuthService;
-import argentinaprograma.cvdigital.usuario.services.interfaces.UsuarioService;
 import argentinaprograma.cvdigital.utils.ConfirmationCodeGenerator;
 import io.jsonwebtoken.JwtBuilder;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,31 +22,32 @@ import java.util.Date;
 public class AuthServiceImp implements AuthService {
 
     // Repositorio para interactuar con la base de datos de usuarios
-    private UsuarioService usuarioService;
+    private UsuarioRepository usuarioRepository;
 
     private UsuarioValidator usuarioValidator;
     // Generador de tokens JWT
     private JwtBuilder jwtBuilder;
 
+    private ModelMapper modelMapper;
+
+    private EmailService emailService;
+
     @Autowired
-    public AuthServiceImp(UsuarioService usuarioService, UsuarioValidator usuarioValidator, JwtBuilder jwtBuilder) {
-        this.usuarioService = usuarioService;
+    public AuthServiceImp(UsuarioRepository usuarioRepository, UsuarioValidator usuarioValidator, JwtBuilder jwtBuilder,EmailService emailService) {
+        this.usuarioRepository = usuarioRepository;
         this.usuarioValidator = usuarioValidator;
         this.jwtBuilder = jwtBuilder;
+        this.modelMapper = new ModelMapper();
+        this.emailService=emailService;
     }
 
     // Registra un usuario nuevo en la base de datos
-    public void registrarUsuario(Usuario usuario) {
-
-        // Verifica si ya existe un usuario con el mismo nombre de usuario
-        this.usuarioValidator.existeUsuarioConNick(usuario.getNick());
-
-        // Verifica si ya existe un usuario con el mismo correo electrónico
-        this.usuarioValidator.existeUsuarioConEmail(usuario.getEmail());
+    public void registrarUsuario(UsuarioFullDTO usuarioFullDTO) {
+        Usuario usuario =modelMapper.map(usuarioFullDTO,Usuario.class);
 
         // Establece el rol del usuario como "U"(USUARIO) y el estado como "P" ("PENDIENTE")
-        usuario.setRol("U");
-        usuario.setEstado("P");
+        usuario.setRol(Rol.USER);
+        usuario.setEstado(Estado.PENDIENTE);
 
         // Genera un código de confirmación y establece la fecha de generación del código en la fecha actual
         String codigoConfirmacion = ConfirmationCodeGenerator.generateCode();
@@ -49,32 +55,34 @@ public class AuthServiceImp implements AuthService {
         usuario.setFechaGeneracionCodigo(LocalDateTime.now());
 
         // Almacena el usuario en la base de datos
-        this.usuarioService.CreateUsuario(usuario);
+        this.crearUsuario(usuario);
+        this.emailService.sendEmail(usuario.getEmail(), "Confirmacion de Registro", usuario.getCodigoConfirmacion());
     }
 
     // Confirma el registro de un usuario estableciendo su estado como "A" ("ACTIVO")
-    public void confirmarRegistro(AuthCredentials authCredentials) {
+    public void confirmarRegistro(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO) {
         // Obtiene el usuario y valida su código de confirmación
-        Usuario usuarioObtenido = getUsuarioConCodigoConfirmacionValidado(authCredentials);
+        this.usuarioValidator.controlNick(usuarioAuthCredentialsDTO.getNick());
+        this.usuarioValidator.existeUsuario(usuarioAuthCredentialsDTO.getNick());
+        Usuario usuarioObtenido = getUsuarioConCodigoConfirmacionValidado(usuarioAuthCredentialsDTO);
 
         // Establece el estado del usuario como "A"
-        usuarioObtenido.setEstado("A");
+        usuarioObtenido.setEstado(Estado.ACTIVADO);
 
         // Actualiza el usuario en la base de datos
-        this.usuarioService.updateUsuario(usuarioObtenido);
+        this.usuarioRepository.save(usuarioObtenido);
     }
 
     // Inicia sesión de un usuario y devuelve un token JWT
-    public String iniciarSesion(AuthCredentials authCredentials) {
+    public String iniciarSesion(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO) {
         // Obtiene el usuario con el nombre de usuario especificado
-        Usuario usuarioObtenido = this.usuarioService.getUsuarioByNick(authCredentials.getNick());
+        Usuario usuarioObtenido = this.usuarioRepository.getByNick(usuarioAuthCredentialsDTO.getNick());
 
-        // Si el usuario no existe o la contraseña no coincide, lanza una excepción BadRequestException
-        if (!usuarioObtenido.getPass().equals(authCredentials.getPass())) {
+        if (!usuarioObtenido.getPass().equals(usuarioAuthCredentialsDTO.getPass()) || usuarioObtenido==null) {
             throw new BadRequestException("Usuario o Contraseña incorrectos");
         }
         // Si el usuario está en estado "P", lanza una excepción BadRequestException
-        if (usuarioObtenido.getEstado().equals("P")) {
+        if (usuarioObtenido.getEstado().equals(Estado.PENDIENTE)) {
             throw new BadRequestException("Email sin confirmar");
         }
 
@@ -85,49 +93,72 @@ public class AuthServiceImp implements AuthService {
     }
 
     // Solicita el restablecimiento de contraseña de un usuario
-    public void solicitarRestablecimientoDeContraseña(AuthCredentials authCredentials) {
+    public void solicitarRestablecimientoDeContraseña(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO) {
         // Obtiene el usuario con el nombre de usuario especificado
-        Usuario usuarioObtenido = this.usuarioService.getUsuarioByNick(authCredentials.getNick());
-
+        Usuario usuarioObtenido = this.usuarioRepository.getByNick(usuarioAuthCredentialsDTO.getNick());
+        this.usuarioValidator.esNulo(usuarioObtenido,"Usuario inexistente");
         // Genera un código de confirmación y establece la fecha de generación del código en la fecha actual
         String codigoConfirmacion = ConfirmationCodeGenerator.generateCode();
         usuarioObtenido.setCodigoConfirmacion(codigoConfirmacion);
         usuarioObtenido.setFechaGeneracionCodigo(LocalDateTime.now());
 
         // Actualiza el usuario en la base de datos
-        this.usuarioService.updateUsuario(usuarioObtenido);
+        this.usuarioRepository.save(usuarioObtenido);
     }
 
     // Restablece la contraseña de un usuario
-    public void RestablecimientoDeContraseña(AuthCredentials authCredentials) {
+    public void RestablecimientoDeContraseña(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO) {
         // Obtiene el usuario y valida su código de confirmación
-        Usuario usuarioObtenido = getUsuarioConCodigoConfirmacionValidado(authCredentials);
-
+        Usuario usuarioObtenido = getUsuarioConCodigoConfirmacionValidado(usuarioAuthCredentialsDTO);
+        usuarioValidator.controlPass(usuarioAuthCredentialsDTO.getPass());
         // Establece la nueva contraseña del usuario
-        usuarioObtenido.setPass(authCredentials.getPass());
+        usuarioObtenido.setPass(usuarioAuthCredentialsDTO.getPass());
 
         // Actualiza el usuario en la base de datos
-        this.usuarioService.updateUsuario(usuarioObtenido);
+        this.usuarioRepository.save(usuarioObtenido);
     }
 
-    private Usuario getUsuarioConCodigoConfirmacionValidado(AuthCredentials authCredentials) {
-        Usuario usuarioObtenido = this.usuarioService.getUsuarioByNick(authCredentials.getNick());
-        this.validarCodigoConfirmacion(authCredentials,usuarioObtenido);
+    private Usuario getUsuarioConCodigoConfirmacionValidado(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO) {
+        Usuario usuarioObtenido = this.usuarioRepository.getByNick(usuarioAuthCredentialsDTO.getNick());
+        this.usuarioValidator.esNulo(usuarioObtenido,"usuario inexistente");
+        this.validarCodigoConfirmacion(usuarioAuthCredentialsDTO,usuarioObtenido);
         usuarioObtenido.setCodigoConfirmacion(null);
         usuarioObtenido.setFechaGeneracionCodigo(null);
         return usuarioObtenido;
     }
 
-    private void validarCodigoConfirmacion(AuthCredentials authCredentials,Usuario usuario){
-        if (!usuario.getCodigoConfirmacion().equals(authCredentials.getCodigoConfirmacion()) ||
+    private void validarCodigoConfirmacion(UsuarioAuthCredentialsDTO usuarioAuthCredentialsDTO, Usuario usuario){
+        if(usuarioAuthCredentialsDTO.getCodigoConfirmacion()==null
+                || usuarioAuthCredentialsDTO.getCodigoConfirmacion().isEmpty()
+                || usuarioAuthCredentialsDTO.getCodigoConfirmacion().isBlank()){
+            throw new BadRequestException("Codigo de confirmación no válido.");
+        }
+        if(usuario.getCodigoConfirmacion()==null ||usuario.getCodigoConfirmacion().isBlank() ||usuario.getCodigoConfirmacion().isEmpty()){
+            throw new NotFoundException("Codigo de confirmacion no ha sido generado.");
+        }
+        if (!usuario.getCodigoConfirmacion().equals(usuarioAuthCredentialsDTO.getCodigoConfirmacion()) ||
                 LocalDateTime.now().isAfter(usuario.getFechaGeneracionCodigo().plusMinutes(20))) {
-            throw new BadRequestException("Codigo de confirmacion no válido");
+            throw new BadRequestException("Codigo de confirmacion no válido.");
         }
     }
 
+    private Usuario crearUsuario(Usuario usuario) {
+        this.validarUsuarioParaCreacion(usuario);
+        Usuario usuarioObtenido = this.usuarioRepository.save(usuario);
+        this.usuarioValidator.usuarioNulo(usuarioObtenido);
+        return usuarioObtenido;
+    }
 
-
-
-
+    private void validarUsuarioParaCreacion(Usuario usuario) {
+        this.usuarioValidator.usuarioNulo(usuario);
+        this.usuarioValidator.controlNick(usuario.getNick());
+        this.usuarioValidator.existeUsuarioConNick(usuario.getNick());
+        this.usuarioValidator.existeUsuarioConEmail(usuario.getEmail());
+        this.usuarioValidator.controlApellidosUsuario(usuario.getApellidos());
+        this.usuarioValidator.controlNombresUsuario(usuario.getNombres());
+        this.usuarioValidator.controlPass(usuario.getPass());
+        this.usuarioValidator.controlProvincia(usuario.getProvincia());
+        this.usuarioValidator.controlPais(usuario.getPais());
+    }
 
 }

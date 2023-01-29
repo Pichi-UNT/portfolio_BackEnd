@@ -1,20 +1,19 @@
 package argentinaprograma.cvdigital.usuario.services.interfaces;
 
+import argentinaprograma.cvdigital.usuario.DTO.UsuarioDTO;
 import argentinaprograma.cvdigital.usuario.models.Usuario;
 
 public interface UsuarioService {
 
-    Usuario CreateUsuario(Usuario usuario);
+    UsuarioDTO actualizarUsuario(Usuario usuario);
 
-    Usuario updateUsuario(Usuario usuario);
+    UsuarioDTO getUsuarioById(Integer usuarioId);
 
-    Usuario getUsuarioById(Integer usuarioId);
+    UsuarioDTO getUsuarioByNick(String username);
 
-    Usuario getUsuarioByNick(String username);
+    void desactivarUsuario(Usuario usuario);
 
-    Usuario BanearUsuario(Usuario usuario);
-
-    Usuario ActivarUsuario(Usuario usuario);
+    void activarUsuario(Usuario usuario);
 
 
 }

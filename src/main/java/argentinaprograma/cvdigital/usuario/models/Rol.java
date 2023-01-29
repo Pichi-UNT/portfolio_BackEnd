@@ -1,20 +1,30 @@
 package argentinaprograma.cvdigital.usuario.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+
+
 
 public enum Rol {
-    ADMIN('A'),
-    USER('U');
+    ADMIN("A"),
+    USER("U");
 
-    private final char valor;
+    private final String valor;
 
-    Rol(char valor) {
-        this.valor = valor;
+    private Rol(String valor) {
+        this.valor = valor.toUpperCase();
     }
 
-    public char getValor() {
-        return valor;
+    public String getValor() {
+        return valor.toUpperCase();
     }
+
+    public static Rol getEnum(String valor) {
+        Rol rol=null;
+        for (Rol r : Rol.values()) {
+            if (r.getValor().equals(valor)) {
+                rol=r;
+            }
+        }
+        return rol;
+    }
+
 }
